@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <meta name="author" content="fanghongru" />
+        <link rel="stylesheet" href="css/bootstrap.min.css" />
+        <link rel="stylesheet" href="css/style.css" />
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDVwtjIUmIdX-GInth2K3C0D59PZ2Qoz3Q&sensor=false"></script>
+    </head>
+    <body>
+        <button id="start_btn" class="btn btn-primary btn-large centered">BEGIN</button>
+        <div id="map_canvas" style="width:100%; height:100%;"></div>
+        <div id="curtain"></div>
+        <div id="end_text" class="centered" style="margin-left:-390px">Happy Birthday, My Little Cat.Love you forever.</div>
+        <audio preload="auto" id="music">
+            <source src="music/MissYouTonight.mp3" type="audio/mpeg" />
+        </audio>
+
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <script type="text/javascript" src="js/screenfull.min.js"></script>
+        <script type="text/javascript">
+        !function(){
+            $("#start_btn").click(function(){
+                screenfull && screenfull.request();
+                $(this).remove();
+                init();
+            });
+
+            var map, marker_me, marker_you;
+
+            var TIANJIN = new google.maps.LatLng(39.0610708418,117.1419901551),
+                LIVERPOOL = new google.maps.LatLng(53.3830710000,-2.7849970000);
+
+            var DEFAULT_CENTER = new google.maps.LatLng(41.7010970000,44.8606560000),
+                BEIJING= new google.maps.LatLng(39.9175175019,116.3991181131);
+                DUBAI= new google.maps.LatLng(25.1107650000,55.3705830000);
+                SANTORINI= new google.maps.LatLng(36.9437390000,24.7004200000);
+
+
+            function smoothZoom(dest_zoom, callback){
+                callback = callback || function(){};
+
+                var now_zoom = map.getZoom();
+                if(now_zoom == dest_zoom){
+                    callback();
+                }
+                var increm = now_zoom < dest_zoom ? 1:-1;
+                var timeout = setInterval(function(){
+                    now_zoom += increm;
+                    map.setZoom(now_zoom);
+                    if(now_zoom == dest_zoom){
+                        clearTimeout(timeout);
+                        setTimeout(function(){
+                            callback();
+                        }, 800);
+                    }
+                }, 900);
+            }
+
+
+            function loopInfoWindows(infowindows, interval, callback, keep_last){
+                var i = 0, len = infowindows.length;
+                var timeout = setInterval(function(){
+                    i > 0 && infowindows[i-1].close();
+                    infowindows[i].open(map);
+                    if(++i == len){
+                        clearInterval(timeout);
+                        !keep_last && infowindows[i-1].close();
+                        (callback || function(){})();
+                    }
+                }, interval || 1000);
+            }
+
+            window.theEnd = function(){
+                marker_you.setAnimation(google.maps.Animation.BOUNCE);
+                setTimeout(function(){
+                    $("#curtain").animate({
+                        height: $(window).height()
+                    }, 6000, function(){
+                        $("#end_text").fadeIn("slow");
+                    });
+                }, 3000);
+            }
+
+            function willYouLoveMeForever(){
+                window.my_infowindow = new google.maps.InfoWindow({
+                    content: "I will love you forever, will you?",
+                    position: BEIJING
+                });
+                my_infowindow.open(map);
+
+                window.your_infowindow = new google.maps.InfoWindow({
+                    content: '<select>' +
+                                '<option value="yes">Yes, I will.</option>' +
+                                '<option value="yes">Yes, I will.</option>' +
+                             '</select>' +
+                             '<input type="button" value="submit" ' +
+                             'onclick="my_infowindow.close();your_infowindow.close();theEnd();" />',
+                    position: LIVERPOOL
+                });
+                setTimeout(function(){
+                    your_infowindow.open(map);
+                }, 1000);
+            }
+
+
+            function showILoveYous(){
+                var i_love_you_s = [
+                    { point: "52.9, -0.5", text: "I Love You" },
+                    { point: "52.6, 10.9", text: "Ich liebe Dich" },
+                    { point: "53.3, 20.7", text: "Kocham Cię" },
+                    { point: "48.8, 5.1", text: "Je t'aime" },
+                    { point: "39.8, -8.9", text: "Eu te amo" },
+                    { point: "39.6, -3.3", text: "Te amo" },
+                    { point: "42.9, 13.9", text: "Ti amo" },
+                    { point: "61.5, 88.6", text: "Я люблю тебя" },
+                    { point: "36.6, 138.9", text: "私はあなたを愛して" },
+                    { point: "36.9, 127.6", text: "난 널 사랑해" },
+                    { point: "30.6, 114.3", text: "我爱你" }
+                ];
+                var infowindows = [];
+                $.each(i_love_you_s, function(i, i_love_you){
+                    var point = i_love_you.point.split(",");
+                    var infowindow = new google.maps.InfoWindow({
+                        content: "<b>" + i_love_you.text + "</b>",
+                        position: new google.maps.LatLng(point[0], point[1])
+                    });
+                    infowindows.push(infowindow);
+                });
+
+                loopInfoWindows(infowindows, 2000, function(){
+                    map.panTo(DEFAULT_CENTER);
+                    setTimeout(function(){
+                        willYouLoveMeForever();
+                    }, 1000);
+                });
+
+            }
+
+            function showPhotos(){
+                var PHOTO_BASE = "photos/";
+                var photos = [
+                    //北京
+                    { point: "39.9175175019,116.3991181131",
+                      contents: "<img src='photos/beijing/beijing1.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.9046716866,116.4071591980",
+                      contents: "<img src='photos/beijing/beijing2.jpg' style='width:390px;height:550px;' />",},
+                    { point: "39.9046716868,116.4071591990",
+                      contents: "<img src='photos/beijing/beijing3.jpg' style='width:390px;height:550px;' />",},
+                    { point: "39.9046716850,116.4071591988",
+                      contents: "<img src='photos/beijing/beijing4.jpg' style='width:390px;height:550px;' />",},
+                    //苏州
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou1.jpg' style='width:390px;height:550px;' />",},
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou2.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou3.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou4.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou5.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou6.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2983274390,120.5831901465",
+                      contents: "<img src='photos/suzhou/suzhou7.jpg' style='width:520px;height:390px;' />",},
+                    //天津
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin1.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin2.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin3.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin4.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin5.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin6.jpg' style='width:390px;height:550px;' />",},
+                    { point: "39.0610708460,117.1419901556",
+                      contents: "<img src='photos/tianjin/tianjin7.jpg' style='width:520px;height:390px;' />",},
+                    //杭州
+                    { point: "30.2741483696,120.1551536571",
+                      contents: "<img src='photos/hangzhou/hangzhou1.jpg' style='width:520px;height:390px;' />",},
+                    { point: "30.2741483696,120.1551536571",
+                      contents: "<img src='photos/hangzhou/hangzhou2.jpg' style='width:520px;height:390px;' />",},
+                    { point: "30.2741483696,120.1551536571",
+                      contents: "<img src='photos/hangzhou/hangzhou3.jpg' style='width:520px;height:390px;' />",},
+                    { point: "30.2741483696,120.1551536571",
+                      contents: "<img src='photos/hangzhou/hangzhou4.jpg' style='width:520px;height:390px;' />",},
+                    { point: "30.2741483696,120.1551536571",
+                      contents: "<img src='photos/hangzhou/hangzhou5.jpg' style='width:520px;height:390px;' />",},
+                    { point: "30.2741483696,120.1551536571",
+                      contents: "<img src='photos/hangzhou/hangzhou6.jpg' style='width:520px;height:390px;' />",},
+                    //北戴河
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe1.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe2.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe3.jpg' style='width:390px;height:550px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe4.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe5.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe6.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe7.jpg' style='width:520px;height:390px;' />",},
+                    { point: "39.8350517450,119.4846082963",
+                      contents: "<img src='photos/beidaihe/beidaihe8.jpg' style='width:390px;height:550px;' />",},
+
+                    //上海
+
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai1.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai2.jpg' style='width:390px;height:550px;' />",},
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai3.jpg' style='width:390px;height:550px;' />",},
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai5.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai6.jpg' style='width:400px;height:550px;' />",},
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai7.jpg' style='width:520px;height:390px;' />",},
+                    { point: "31.2303950509,121.4736999666",
+                      contents: "<img src='photos/shanghai/shanghai8.jpg' style='width:390px;height:550px;' />",},
+
+
+                    /*{ point: "31.2303950509,121.4736999666", src: PHOTO_BASE + "shanghai/shanghai10.jpg" }*/
+                ];
+                var infowindows = [];
+                $.each(photos, function(i, photo){
+                    var point = photo.point.split(",");
+                    var infowindow = new google.maps.InfoWindow({
+                        content: photo.contents,
+                        position: new google.maps.LatLng(point[0], point[1])
+                    });
+                    infowindows.push(infowindow);
+                });
+
+
+                loopInfoWindows(infowindows, 3000, function(){
+                    //map.panTo(BEIJING);
+                    smoothZoom(3, function(){
+                        map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                        map.panTo(DEFAULT_CENTER);
+                        showWithYou();
+                    });
+                });
+
+
+
+
+            }
+
+            function showChina(){
+                map.panTo(BEIJING);
+                smoothZoom(7, function(){
+                    map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                    setTimeout(function(){showPhotos()}, 3000);
+                });
+                /*map.panTo(DUBAI);
+                smoothZoom(3, function(){
+                    map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                    setTimeout(function(){showPhotosWanna()}, 3000);
+                });*/
+            }
+
+            function showPhotosWanna(){
+                var PHOTO_BASE = "photoswanna/";
+                var photos = [
+                    //{ title: "Orenburg",point: "51.6484620000,55.1132780000", src: PHOTO_BASE + "Orenburg.jpg" },
+                    { point: "51.6484620000,55.1132780000", src: PHOTO_BASE + "Orenburg.jpg" },
+                    { point: "55.5720090000,37.7459720000", src: PHOTO_BASE + "Moscow.jpg" },
+                    { point: "55.6676610000,12.5336270000", src: PHOTO_BASE + "Copenhagen.png" },
+                    { point: "48.1100280000,11.5684160000", src: PHOTO_BASE + "Munich.jpg" },
+                    { point: "45.3974760000,12.3420360000", src: PHOTO_BASE + "Venice.jpg" },
+                    { point: "36.9437390000,24.7004200000", src: PHOTO_BASE + "Santorini.jpeg" },
+                    { point: "25.1107650000,55.3705830000", src: PHOTO_BASE + "Dubai.jpeg" },
+                    { point: "33.5873230000,73.0899100000", src: PHOTO_BASE + "ISB.jpg" },
+                    { point: "43.8191397178,87.5786461706", src: PHOTO_BASE + "Wulumuqi.jpg" },
+                    { point: "54.8679370000,73.5105750000", src: PHOTO_BASE + "OMSK.jpg" }
+
+                ];
+                var infowindows2 = [];
+                $.each(photos, function(i, photo){
+                    //var title =photo.title
+                    var point = photo.point.split(",");
+                    var infowindow = new google.maps.InfoWindow({
+                        //title: photos.title
+                        content: "<img src='" + photo.src + "' style='width:420px;height:290px;' />",
+                        position: new google.maps.LatLng(point[0], point[1])
+                    });
+                    infowindows2.push(infowindow);
+                });
+
+
+
+                loopInfoWindows(infowindows2, 3000, function(){
+                    //map.panTo(BEIJING);
+                    smoothZoom(3, function(){
+                        map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                        map.panTo(DEFAULT_CENTER);
+                        showILoveYous();
+                    });
+                });
+
+            }
+
+            function showWanna(){
+                //map.panTo(DUBAI);
+                map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                setTimeout(function(){showPhotosWanna()}, 3000);
+
+            }
+
+            function showWithYou(){
+                var with_you_me = [
+                    { point: "36.9437390000,24.7004200000", text: "地图上标注的地方想带你去旅行！" },
+                    { point: "37.9437390000,24.7004200000", text: "我要为你拍出美美的照片！" }
+                ];
+                var infowindows1 = [];
+                $.each(with_you_me, function(i, with_you){
+                    var point = with_you.point.split(",");
+                    var infowindow = new google.maps.InfoWindow({
+                        content: "<b>" + with_you.text + "</b>",
+                        position: new google.maps.LatLng(point[0], point[1])
+                    });
+                    infowindows1.push(infowindow);
+                });
+
+
+                loopInfoWindows(infowindows1, 3000, function(){
+                    //map.panTo(BEIJING);
+                    smoothZoom(4, function(){
+                        map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                        map.panTo(SANTORINI);
+                        showWanna();
+                    });
+                });
+
+                /*loopInfoWindows(infowindow1, 3000, showWanna);*/
+            }
+
+            /*function showILoveYous(){
+                var i_love_you_s = [
+                    { point: "52.9, -0.5", text: "I Love You" },
+                    { point: "52.6, 10.9", text: "Ich liebe Dich" },
+                    { point: "53.3, 20.7", text: "Kocham Cię" },
+                    { point: "48.8, 5.1", text: "Je t'aime" },
+                    { point: "39.8, -8.9", text: "Eu te amo" },
+                    { point: "39.6, -3.3", text: "Te amo" },
+                    { point: "42.9, 13.9", text: "Ti amo" },
+                    { point: "61.5, 88.6", text: "Я люблю тебя" },
+                    { point: "36.6, 138.9", text: "私はあなたを愛して" },
+                    { point: "36.9, 127.6", text: "난 널 사랑해" },
+                    { point: "30.6, 114.3", text: "我爱你" }
+                ];
+                var infowindows = [];
+                $.each(i_love_you_s, function(i, i_love_you){
+                    var point = i_love_you.point.split(",");
+                    var infowindow = new google.maps.InfoWindow({
+                        content: "<b>" + i_love_you.text + "</b>",
+                        position: new google.maps.LatLng(point[0], point[1])
+                    });
+                    infowindows.push(infowindow);
+                });
+
+                loopInfoWindows(infowindows, 2000, function(){
+                    map.panTo(DEFAULT_CENTER);
+                    setTimeout(function(){
+                        willYouLoveMeForever();
+                    }, 1000);
+                });
+
+            }*/
+
+            function init() {
+                // play the background music
+                var music =  document.getElementById("music");
+                music.play();
+
+                map = new google.maps.Map(document.getElementById("map_canvas"), {
+                    center: new google.maps.LatLng(41.7010970000,44.8606560000),
+                    zoom: 3,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                });
+
+                marker_me = new google.maps.Marker({
+                    position: TIANJIN,
+                    title: "me",
+                    icon: "http://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png",
+                    animation: google.maps.Animation.DROP,
+                    map: map
+                });
+                marker_you = new google.maps.Marker({
+                    position: LIVERPOOL,
+                    title: "you",
+                    icon: "http://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png",
+                    animation: google.maps.Animation.DROP,
+                    map: map
+                });
+
+                marker_me.setAnimation(google.maps.Animation.BOUNCE);
+
+                setTimeout(function(){
+                    showChina();
+                }, 5000);
+            }
+        }();
+
+
+        </script>
+
+        <script type="text/javascript" src="js/PxLoader.js"></script>
+        <script type="text/javascript" src="js/PxLoaderImage.js"></script>
+        <script type="text/javascript">
+
+            var preloader = new PxLoader();
+
+            preloader.start(["beijing", "suzhou","tianjin","hangzhou","beidaihe","shanghai"]);
+            for(var i = 1; i <= 4; i++){
+                preloader.add( new PxLoaderImage("photos/" + "beijing" + i + ".jpg"), "beijing" );
+            }
+            for(var i = 1; i <= 7; i++){
+                preloader.add( new PxLoaderImage("photos/" + "suzhou" + i + ".jpg"), "suzhou" );
+            }
+            for(var i = 1; i <= 7; i++){
+                preloader.add( new PxLoaderImage("photos/" + "tianjin" + i + ".jpg"), "tianjin" );
+            }
+            for(var i = 1; i <= 6; i++){
+                preloader.add( new PxLoaderImage("photos/" + "hangzhou" + i + ".jpg"), "hangzhou" );
+            }
+            for(var i = 1; i <= 8; i++){
+                preloader.add( new PxLoaderImage("photos/" + "beidaihe" + i + ".jpg"), "beidaihe" );
+            }
+            for(var i = 1; i <= 8; i++){
+                preloader.add( new PxLoaderImage("photos/" + "shanghai" + i + ".jpg"), "shanghai" );
+            }
+            preloader.start(["beijing", "suzhou","tianjin","hangzhou","beidaihe","shanghai"]);
+
+
+
+        </script>
+
+        <script type="text/javascript">
+
+          var _gaq = _gaq || [];
+          // set your gogle analytics account below
+          _gaq.push(['_setAccount', '']);
+          _gaq.push(['_trackPageview']);
+
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+
+        </script>
+
+    </body>
+</html>
